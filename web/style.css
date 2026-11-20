@@ -1,4 +1,5 @@
 
+/* set the main colours, font and default page appearance */
 :root {
   color-scheme: light;
   font: 16px/1.5 "Segoe UI", system-ui, sans-serif;
@@ -12,65 +13,190 @@
   background: #f4f6f2;
   color: var(--ink);
 }
+
+/* make element sizing consistent across the page */
 * { box-sizing: border-box; }
+
+/* completely hide elements when the hidden attribute is applied */
 [hidden] { display: none !important; }
-main { width: min(1180px, 100%); margin: auto; padding: 24px clamp(14px, 4vw, 48px) 48px; }
+
+/* set the main content width, alignment and spacing */
+main {
+  width: min(1180px, 100%);
+  margin: auto;
+  padding: 24px clamp(14px, 4vw, 48px) 48px;
+}
+
+/* remove default spacing from common text elements */
 h1, h2, h3, p { margin: 0; }
+
+/* style the main header with a dark gradient and flexible layout */
 .hero {
   display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px;
   padding: clamp(22px, 5vw, 46px); border-radius: 18px;
   color: white; background: linear-gradient(118deg, #102f31, #155243);
 }
+
+/* use a lighter text colour for paragraphs inside the header */
 .hero p { color: #e1f1ea; }
+
+/* adjust the main heading size and spacing */
 .hero h1 { font-size: clamp(2.2rem, 7vw, 4rem); line-height: 1.08; letter-spacing: -.055em; margin: .25rem 0 .6rem; }
+
+/* style the small introductory label above the main heading */
 .eyebrow { font-size: .78rem; text-transform: uppercase; letter-spacing: .12em; font-weight: 750; }
+
+/* highlight the stock quantities inside each hub card */
 .stock strong { display: block; font-size: 1.05rem; }
+
+/* set the appearance and spacing of section headings */
 h2 { font-size: 1.2rem; letter-spacing: -.02em; margin-bottom: 9px; }
 h3 { font-size: 1rem; }
+
+/* arrange the three supply hub cards in a responsive grid */
 .stock { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin-bottom: 23px; }
-.stock article, .request, .planner, .history, .result-box { background: var(--paper); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+
+/* apply a consistent card style to the hub, request and planning sections */
+.stock article, .request, .planner, .history, .result-box {
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 14px;
+}
+
+/* use a muted colour for secondary information */
 .stock small, .muted { color: var(--muted); }
+
+/* display the stock availability meter across the full card width */
 meter { display: block; width: 100%; height: .7rem; accent-color: var(--teal); }
+
+/* arrange emergency requests and the dispatch planner side by side */
 .board { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 18px; align-items: start; }
+
+/* keep the dispatch planner visible while scrolling on larger screens */
 .planner { position: sticky; top: 12px; }
+
+/* add spacing between individual emergency request cards */
 .request { margin-bottom: 8px; }
+
+/* highlight the request recommended by the fuzzy priority system */
 .request.recommended { border-left: 4px solid var(--teal); }
+
+/* align request and shipment headings with their related actions */
 .request-head, .shipment-head { display: flex; align-items: start; justify-content: space-between; flex-wrap: wrap; gap: 6px; }
+
+/* add spacing above paragraphs inside request cards */
 .request p { margin-top: 4px; }
+
+/* separate the expandable fuzzy priority explanation from other content */
 .request details { margin-top: 6px; }
+
+/* style the badges used to display request information */
 .badge { display: inline-block; border-radius: 6px; padding: 3px 7px; background: var(--mint); color: #125342; font-size: .8rem; font-weight: 700; }
+
+/* use an amber colour to highlight requests that may miss their deadline */
 .badge.warn { background: var(--amber); color: #704712; }
+
+/* keep buttons and input fields consistent with the main font */
 button, input { font: inherit; }
+
+/* define the general appearance and interaction style of buttons */
 button { min-height: 38px; padding: 6px 11px; border: 1px solid #99b8ad; border-radius: 8px; cursor: pointer; font-size: .9rem; font-weight: 680; }
+
+/* make disabled buttons appear less prominent */
 button:disabled { opacity: .52; cursor: default; }
+
+/* style secondary action buttons */
 .quiet { background: white; color: #185346; }
+
+/* style the main submission button */
 .primary { background: var(--teal); border-color: var(--teal); color: white; }
+
+/* make the submit button fill the width of the planning section */
 #confirm { width: 100%; }
+
+/* show a visible outline when users navigate with a keyboard */
 button:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid #408c72; outline-offset: 2px; }
+
+/* style each shipment entry inside the dispatch plan */
 .shipment { margin: 10px 0; padding: 10px; border-radius: 8px; background: #f2f6f3; }
+
+/* arrange the three resource quantity inputs in columns */
 .quantities { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin: 8px 0 4px; }
+
+/* arrange each resource label and its input vertically */
 .quantities label { font-size: .8rem; display: grid; gap: 3px; }
+
+/* style the editable shipment quantity fields */
 .quantities input { width: 100%; min-width: 0; padding: 5px; border: 1px solid #98afa6; border-radius: 5px; background: white; color: var(--ink); }
+
+/* add spacing around the dispatch plan validation message */
 #plan-message { margin: 9px 0; }
+
+/* add spacing above the request history and evaluation results */
 .history, .result-box { margin-top: 10px; }
+
+/* separate individual entries in the request history */
 .history article { padding: 8px 0; border-top: 1px solid var(--line); margin-top: 8px; }
+
+/* make expandable section headings clickable */
 summary { cursor: pointer; font-weight: 650; }
+
+/* allow wide tables to scroll horizontally instead of overflowing */
 .scroll { overflow-x: auto; }
+
+/* set the layout and spacing of evaluation tables */
 table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+
+/* style table headings and cells with consistent alignment and borders */
 th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 8px; white-space: nowrap; }
+
+/* highlight error messages so users can identify problems easily */
 #error { background: #fce7de; color: #762c1e; margin: 10px 0; padding: 9px; border-radius: 8px; }
 
-/* Adjust the layout for smaller screens to ensure the application remains responsive. */
-@media (max-width: 760px) { .board { grid-template-columns: 1fr; } .planner { position: static; } }
-@media (max-width: 380px) { .stock article { padding: 7px; } .stock small { font-size: .7rem; } }
+/* adjust the layout for smaller screens to ensure the application remains responsive */
+@media (max-width: 760px) {
+  .board { grid-template-columns: 1fr; }
+  .planner { position: static; }
+}
+
+/* reduce hub card spacing and text size on very narrow screens */
+@media (max-width: 380px) {
+  .stock article { padding: 7px; }
+  .stock small { font-size: .7rem; }
+}
+
+/* arrange replay and new day buttons with flexible spacing */
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+/* highlight the selected simulation date and its daily summary */
 .brief { margin: 14px 0 24px; padding: 12px 15px; border-left: 4px solid var(--teal); background: var(--mint); border-radius: 5px; }
+
+/* reduce the spacing below the date heading */
 .brief h2 { margin-bottom: 2px; }
+
+/* prevent hub cards from overflowing their grid columns */
 .stock article { min-width: 0; }
+
+/* allow long stock values to wrap instead of overflowing */
 .stock strong { overflow-wrap: anywhere; }
+
+/* add spacing below each hub name */
 .stock h3 { margin-bottom: 4px; }
+
+/* remove default list styling from the hub stock information */
 .stock ul { list-style: none; padding: 0; margin: 7px 0 0; }
+
+/* arrange resource names and quantities in two columns */
 .stock li { display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; font-size: .84rem; padding-top: 4px; }
+
+/* place the stock availability meter below the resource information */
 .stock li meter { grid-column: 1 / -1; }
+
+/* add spacing above the add to plan buttons in request cards */
 .request button { margin-top: 8px; }
-@media (max-width: 620px) { .stock { grid-template-columns: 1fr; } }
+
+/* display hub cards vertically on smaller mobile screens */
+@media (max-width: 620px) {
+  .stock { grid-template-columns: 1fr; }
+}
