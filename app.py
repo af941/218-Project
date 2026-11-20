@@ -1,4 +1,4 @@
-"""Local server for the daily planning game. Run with py app.py."""
+#Local server for the daily planning game. Run with py
 import json
 from functools import partial
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
@@ -12,7 +12,7 @@ PLAYABLE_DATES = [day for day, requests in BY_DAY.items() if len(requests) >= 2]
 
 
 def play(payload):
-    """Build a fresh day and apply a submitted plan if the player confirms it."""
+    #Build a fresh day and apply a submitted plan if the player confirms it.
     day = payload.get("day")
     if day is None:
         previous = payload.get("previous")
