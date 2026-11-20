@@ -8,111 +8,163 @@ from app import PLAYABLE_DATES, play
 from simulation import BY_DAY, Day, State
 
 
+# A fixed date makes the tests repeatable. REQ-00001 is assigned to the
+# El Arish hub and requests 2 medicine kits, 4 shelter kits and 512 nutrition parcels. Cargo lists always follow this resource order.
 DAY = "2025-10-01"
 REQUEST_ID = "REQ-00001"
 HUB_ID = "HUB-ARI"
 
 
 class DayAllocationTests(unittest.TestCase):
+    """Test individual shipments, shared hub limits and policy ordering."""
+
     def setUp(self):
+        # unittest runs setUp before every test in this class. Each test starts with a fresh Day, so changes to stock or slots in one test cannot affect later tests.
         self.day = Day(DAY)
         self.request = self.day.requests[REQUEST_ID]
         self.hub = self.day.limits[HUB_ID]
 
     def test_full_dispatch_deducts_stock_weight_and_one_slot(self):
+        # Check that the request was linked to the correct destination and hub, and that the hub's opening resources match the dataset.
         self.assertEqual(self.request.location, "Deir al-Balah")
         self.assertEqual(self.request.hub, HUB_ID)
         self.assertEqual(self.request.demand, [2, 4, 512])
         self.assertEqual(self.hub["stock"], [3239, 2055, 24651])
         self.assertEqual(self.hub["slots"], 4)
+
+        # Save an independent copy so we can detect any accidental changes to Amman's resources when the shipment leaves from El Arish.
         other_hub = deepcopy(self.day.limits["HUB-AMM"])
 
         self.day.dispatch(REQUEST_ID, [2, 4, 512])
 
+        # A full shipment must follow the allowed state sequence, deduct
+        # the requested quantities and use exactly one dispatch slot.
         self.assertEqual(self.request.history, ["Pending", "Dispatched", "Fulfilled"])
         self.assertEqual(self.hub["stock"], [3237, 2051, 24139])
         self.assertEqual(self.hub["slots"], 3)
+
+        # Weight in kilograms: (2 × 2) + (4 × 15) + (512 × 5) = 2,624.
         self.assertEqual(self.hub["kg"], 120_000 - 2_624)
         self.assertEqual(self.day.limits["HUB-AMM"], other_hub)
+
+        # The model credits the entire affected population when all demand is covered. Transit is within the deadline, so lateness is zero.
         self.assertEqual(self.request.served, 1314)
         self.assertEqual(self.request.late, 0)
 
     def test_partial_dispatch_estimates_half_the_beneficiaries(self):
+        # Deliver exactly half of each requested supply type.
         self.day.dispatch(REQUEST_ID, [1, 2, 256])
 
+        # Half the demand gives an estimate of 657 beneficiaries out of
+        # 1,314. The explanation identifies this as a submitted shipment.
         self.assertEqual(self.request.history, ["Pending", "Dispatched", "Partially fulfilled"])
         self.assertEqual(self.request.served, 657)
         self.assertIn("submitted shipment", self.request.explanation)
 
     def test_exact_capacity_and_stock_are_allowed(self):
+        # Set every relevant limit to exactly what the shipment requires.
+        # The shipment should be accepted when it equals the limits.
         self.hub.update(stock=[2, 4, 512], slots=1, kg=2_624, per_trip_kg=2_624)
+
         self.day.dispatch(REQUEST_ID, [2, 4, 512])
+
+        # All available resources are used without any balance going below zero.
         self.assertEqual(self.hub["stock"], [0, 0, 0])
         self.assertEqual(self.hub["slots"], 0)
         self.assertEqual(self.hub["kg"], 0)
 
     def test_ai_scales_cargo_to_a_tight_weight_limit(self):
+        # Reduce the trip capacity to half the weight of a full shipment.
         self.hub["per_trip_kg"] = 1_312
+
+        # Omitting cargo makes dispatch calculate the quantities automatically.
         self.day.dispatch(REQUEST_ID)
+
+        # Proportional scaling halves each quantity in this example.
         self.assertEqual(self.request.allocated, [1, 2, 256])
         self.assertEqual(self.request.state, State.PARTIAL)
 
     def test_missing_transit_uses_accessibility_fallback(self):
+        # This request has no transit estimate in the CSV. The simulator supplies the 16-hour fallback for its accessibility category.
         self.assertEqual(self.day.requests["REQ-00002"].eta, 16)
 
     def test_dispatch_lateness_is_transit_time_minus_deadline(self):
+        # Set transit time to 15 hours for a request with a 12-hour deadline.
         self.request.eta = 15
 
         self.day.dispatch(REQUEST_ID, [2, 4, 512])
 
+        # The shipment covers all demand and is still three hours late.
         self.assertEqual(self.request.late, 3)
 
     def test_invalid_cargo_leaves_request_and_resources_unchanged(self):
+        # Copy the opening limits, including the nested stock list, so we can check that failed shipments never consume hub resources.
         starting_limits = deepcopy(self.hub)
-        invalid_shipments = ([0, 0, 0], [-1, 0, 1], [1.5, 0, 1], [True, 0, 1],
-                             [1, 2], [3, 0, 0])
+        invalid_shipments = (
+            [0, 0, 0],     # Empty shipment.
+            [-1, 0, 1],    # Negative quantity.
+            [1.5, 0, 1],   # Fractional quantity.
+            [True, 0, 1],  # Boolean instead of a whole-number quantity.
+            [1, 2],        # Missing the nutrition quantity.
+            [3, 0, 0],     # Requests only two medicine kits.
+        )
+
         for shipment in invalid_shipments:
+            # subTest identifies which input failed if an assertion breaks.
             with self.subTest(shipment=shipment):
                 with self.assertRaises(ValueError):
                     self.day.dispatch(REQUEST_ID, shipment)
+
+                # Rejection leaves the request available for a corrected plan.
                 self.assertEqual(self.request.state, State.PENDING)
                 self.assertEqual(self.hub, starting_limits)
 
     def test_stock_slots_and_both_cargo_limits_are_enforced(self):
+        # Make the same full shipment infeasible in four different ways.
         restrictions = (
-            {"stock": [1, 4, 512]},
-            {"slots": 0},
-            {"kg": 2_623},
-            {"per_trip_kg": 2_623},
+            {"stock": [1, 4, 512]},  # One medicine kit short.
+            {"slots": 0},            # No dispatch slot available.
+            {"kg": 2_623},           # Daily cargo capacity is 1 kg short.
+            {"per_trip_kg": 2_623},  # Single-trip capacity is 1 kg short.
         )
+
         for changes in restrictions:
             with self.subTest(changes=changes):
+                # Use a fresh day so only one restriction applies at a time.
                 day = Day(DAY)
                 hub = day.limits[HUB_ID]
                 hub.update(changes)
                 limits_before = deepcopy(hub)
+
                 with self.assertRaises(ValueError):
                     day.dispatch(REQUEST_ID, [2, 4, 512])
+
                 self.assertEqual(hub, limits_before)
                 self.assertEqual(day.requests[REQUEST_ID].state, State.PENDING)
 
     def test_two_requests_share_the_same_hub_stock(self):
+        # Give El Arish just enough stock for the first request.
         self.hub["stock"] = [2, 4, 512]
         self.day.dispatch(REQUEST_ID, [2, 4, 512])
 
+        # The second request uses the same hub. It cannot receive even one medicine kit because the first shipment has already used the stock.
         with self.assertRaises(ValueError):
             self.day.dispatch("REQ-00003", [1, 0, 0])
         self.assertEqual(self.day.requests["REQ-00003"].state, State.PENDING)
 
     def test_a_request_cannot_be_dispatched_twice(self):
+        # A partial shipment puts the request into a final state.
         self.day.dispatch(REQUEST_ID, [1, 0, 0])
         limits_after_first_dispatch = deepcopy(self.hub)
 
+        # Trying again must fail without deducting any additional resources.
         with self.assertRaises(ValueError):
             self.day.dispatch(REQUEST_ID, [1, 0, 0])
         self.assertEqual(self.hub, limits_after_first_dispatch)
 
     def test_fuzzy_and_fifo_choose_different_requests_with_one_slot(self):
+        # Run each policy on an independent copy of the same date.
+        # Give El Arish one slot in both runs so the policies must choose which of its requests to serve.
         fuzzy, fifo = Day(DAY), Day(DAY)
         fuzzy.limits[HUB_ID]["slots"] = 1
         fifo.limits[HUB_ID]["slots"] = 1
@@ -120,51 +172,69 @@ class DayAllocationTests(unittest.TestCase):
         fuzzy.finish("fuzzy")
         fifo.finish("fifo")
 
+        # Fuzzy priority selects REQ-00001. First-come-first-served selects REQ-00003 because it was recorded earlier.
         self.assertEqual(fuzzy.requests[REQUEST_ID].state, State.FULFILLED)
         self.assertEqual(fifo.requests[REQUEST_ID].state, State.UNFULFILLED)
         self.assertEqual(fifo.requests["REQ-00003"].state, State.FULFILLED)
 
 
 class GameFlowTests(unittest.TestCase):
+    """Test the game flow through play(), the function used by the API."""
+
     def test_draw_selects_a_playable_date_and_excludes_the_previous_one(self):
+        # Replace random selection with a predictable choice during this test. The replacement always selects the first eligible date.
         with patch("app.choice", side_effect=lambda dates: dates[0]) as choose:
             start = play({})
             next_day = play({"previous": start["day"]})
 
         self.assertIn(next_day["day"], PLAYABLE_DATES)
         self.assertGreaterEqual(len(next_day["requests"]), 2)
+
+        # Inspect the candidates passed to the second draw to confirm that the previous date was removed before selection.
         self.assertNotIn(start["day"], choose.call_args.args[0])
         self.assertNotEqual(start["day"], next_day["day"])
 
     def test_replay_restores_starting_resources(self):
+        # Save the starting game, then finish a plan that consumes stock.
         initial = play({"day": DAY})
         play({"day": DAY, "finish": True, "draft": [{"id": REQUEST_ID, "cargo": [1, 0, 0]}]})
 
+        # Loading that date again should recreate the entire initial response.
         self.assertEqual(play({"day": DAY}), initial)
 
     def test_empty_plan_leaves_all_requests_unfulfilled(self):
+        # Finishing with an empty draft is allowed and sends no aid.
         result = play({"day": DAY, "finish": True, "draft": []})
 
         self.assertTrue(result["finished"])
         self.assertTrue(all(r["state"] == "Unfulfilled" for r in result["requests"]))
         player = result["comparison"]["player"]
+
+        # No shipments means zero estimated beneficiaries and no transit samples for mean lateness. Fairness is undefined at zero coverage.
         self.assertEqual(player["beneficiaries"], 0)
         self.assertIsNone(player["delay"])
         self.assertIsNone(player["fairness"])
 
     def test_result_includes_all_comparison_policies(self):
+        # The results screen expects the player, fuzzy, FIFO and recorded baseline entries in the completed response.
         outcome = play({"day": DAY, "finish": True})
         self.assertEqual(set(outcome["comparison"]), {"player", "fuzzy", "fifo", "recorded"})
 
     def test_ai_draft_lists_highest_priority_shipment_first(self):
+        # On this fixed date, REQ-00001 should appear first in the AI draft.
         start = play({"day": DAY})
         self.assertEqual(start["recommendation"][0]["id"], REQUEST_ID)
 
     def test_ai_draft_matches_fuzzy_comparison_on_every_playable_date(self):
         for day in PLAYABLE_DATES:
+            # Report the specific date if the recommendation or results differ.
             with self.subTest(day=day):
                 start = play({"day": day})
+
+                # Submit the AI recommendation exactly as returned.
                 result = play({"day": day, "draft": start["recommendation"], "finish": True})
+
+                # All requests should remain visible in the results, including unserved requests. The unedited AI draft should also give the player the same metrics as the fuzzy policy.
                 self.assertEqual(len(result["requests"]), len(BY_DAY[day]))
                 self.assertEqual(result["comparison"]["player"], result["comparison"]["fuzzy"])
 
