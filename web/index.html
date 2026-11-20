@@ -9,6 +9,7 @@
 </head>
 <body>
 <main>
+   <!-- Main heading and controls for replaying or selecting another simulation day. -->
   <header class="hero">
     <div>
       <p class="eyebrow">Humanitarian Air Bridge</p>
@@ -20,12 +21,17 @@
       <button id="new-day" class="quiet" type="button" hidden>Draw another date</button>
     </div>
   </header>
+
+  <!-- Display error messages and loading status when the application starts. -->
   <p id="error" role="alert" hidden></p>
   <p id="loading" role="status">Drawing a date…</p>
+  
+    <!-- Display the selected simulation date and its daily summary. -->
   <section id="brief" class="brief" hidden>
     <h2 id="date" tabindex="-1"></h2>
     <p id="daily-summary"></p>
   </section>
+  <!-- Main simulation area containing hub resources, emergency requests and dispatch planning. -->
   <section id="game" hidden>
     <h2>Hub resources after your draft</h2>
     <div id="stock" class="stock"></div>
@@ -34,6 +40,8 @@
         <h2 id="requests-title">Emergency requests</h2>
         <div id="requests"></div>
       </section>
+
+        <!-- Allow users to prepare shipments and review AI allocation recommendations. -->
       <section class="planner" aria-labelledby="plan-title">
         <h2 id="plan-title">Dispatch plan</h2>
         <button id="suggest" class="quiet" type="button">Load AI recommendation</button>
@@ -45,6 +53,8 @@
       </section>
     </div>
   </section>
+
+  <!-- Display the final allocation results after the daily plan is submitted. -->
   <section id="results" hidden aria-label="Daily results"></section>
 </main>
 </body>
