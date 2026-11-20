@@ -1,3 +1,4 @@
+
 :root {
   color-scheme: light;
   font: 16px/1.5 "Segoe UI", system-ui, sans-serif;
@@ -58,6 +59,8 @@ summary { cursor: pointer; font-weight: 650; }
 table { border-collapse: collapse; width: 100%; margin: 8px 0; }
 th, td { border-bottom: 1px solid var(--line); text-align: left; padding: 8px; white-space: nowrap; }
 #error { background: #fce7de; color: #762c1e; margin: 10px 0; padding: 9px; border-radius: 8px; }
+
+/* Adjust the layout for smaller screens to ensure the application remains responsive. */
 @media (max-width: 760px) { .board { grid-template-columns: 1fr; } .planner { position: static; } }
 @media (max-width: 380px) { .stock article { padding: 7px; } .stock small { font-size: .7rem; } }
 .actions { display: flex; flex-wrap: wrap; gap: 8px; }
