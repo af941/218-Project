@@ -1,22 +1,32 @@
+
 <!doctype html>
 <html lang="en">
 <head>
+  <!-- Set the character encoding and make the page responsive on different devices. -->
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- Set the page title shown in the browser tab. -->
   <title>Daily Dispatch | Humanitarian Air Bridge</title>
+
+  <!-- Link the external stylesheet and JavaScript file. -->
   <link rel="stylesheet" href="style.css">
   <script defer src="app.js"></script>
 </head>
+
 <body>
 <main>
-   <!-- Main heading and controls for replaying or selecting another simulation day. -->
+
+  <!-- Main heading and controls for replaying or selecting another simulation day. -->
   <header class="hero">
     <div>
       <p class="eyebrow">Humanitarian Air Bridge</p>
       <h1>Daily Dispatch</h1>
       <p>Plan emergency shipments for one randomly selected day.</p>
     </div>
+
     <div class="actions">
+      <!-- Replay the current date or draw a different simulation date. -->
       <button id="replay" class="quiet" type="button" hidden>Replay this date</button>
       <button id="new-day" class="quiet" type="button" hidden>Draw another date</button>
     </div>
@@ -25,37 +35,53 @@
   <!-- Display error messages and loading status when the application starts. -->
   <p id="error" role="alert" hidden></p>
   <p id="loading" role="status">Drawing a date…</p>
-  
-    <!-- Display the selected simulation date and its daily summary. -->
+
+  <!-- Display the selected simulation date and its daily summary. -->
   <section id="brief" class="brief" hidden>
     <h2 id="date" tabindex="-1"></h2>
     <p id="daily-summary"></p>
   </section>
+
   <!-- Main simulation area containing hub resources, emergency requests and dispatch planning. -->
   <section id="game" hidden>
+
+    <!-- Show the remaining stock, dispatch slots and cargo capacity at each hub. -->
     <h2>Hub resources after your draft</h2>
     <div id="stock" class="stock"></div>
+
     <div class="board">
+
+      <!-- Display the emergency requests available for the selected day. -->
       <section aria-labelledby="requests-title">
         <h2 id="requests-title">Emergency requests</h2>
         <div id="requests"></div>
       </section>
 
-        <!-- Allow users to prepare shipments and review AI allocation recommendations. -->
+      <!-- Allow users to prepare shipments and review AI allocation recommendations. -->
       <section class="planner" aria-labelledby="plan-title">
         <h2 id="plan-title">Dispatch plan</h2>
+
+        <!-- Load the shipment plan generated using fuzzy priority scores. -->
         <button id="suggest" class="quiet" type="button">Load AI recommendation</button>
+
+        <!-- Form for editing shipment quantities and submitting the daily plan. -->
         <form id="draft">
           <div id="shipments"></div>
+
+          <!-- Display validation messages and the current planning status. -->
           <p id="plan-message" class="muted" aria-live="polite"></p>
+
+          <!-- Submit the completed dispatch plan for backend evaluation. -->
           <button id="confirm" class="primary" type="submit">Submit day’s plan</button>
         </form>
       </section>
+
     </div>
   </section>
 
   <!-- Display the final allocation results after the daily plan is submitted. -->
   <section id="results" hidden aria-label="Daily results"></section>
+
 </main>
 </body>
 </html>
